@@ -1,0 +1,10 @@
+# Internal team materials — must NOT ship inside the participant image
+plans
+README.md
+docker-compose.yml
+walkthrough.md
+remote_solver.py
+__pycache__
+**/__pycache__
+*.pyc
+.git

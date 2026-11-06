@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "_alice.html" import alice %}
+{% block title %}{{ title }}{% endblock %}
+{% block path %}level_{{ n }}{% endblock %}
+{% block head %}
+<style>
+  body { height: 100vh; overflow: hidden; }
+  #flag-btn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 16px 36px;
+    z-index: 30; 
+    
+    background: rgba(5, 8, 6, 0.4);
+    backdrop-filter: blur(6px);
+  }
+  #result { margin: 0; }
+</style>
+{% endblock %}
+{% block body %}
+
+<main hidden>
+  <p class="level-label">// level {{ n }}</p>
+  <h1>Just press the button</h1>
+  <p class="subtitle">This button is really scared of mice 🐭</p>
+  <p id="result"></p>
+</main>
+
+<button id="flag-btn" type="button" hidden>[ get the flag ]</button>
+
+{{ alice() }}
+
+<script>
+  const btn = document.getElementById('flag-btn');
+  const result = document.getElementById('result');
+  const task = document.querySelector('main');
+
+  function revealTask() {
+    task.hidden = false;
+    btn.hidden = false;
+  }
+  setTimeout(() => aliceSay("You are starting to ANNOY me now!",
+    () => aliceSay("I won't even let you click a single button!!", revealTask)), 500);
+
+  const HINTS = {
+    10: 'Maybe try without a mouse? ⌨️',
+    100: 'Holy 100 escapes... F12 has a place where you can talk to the page directly 💬',
+  };
+  let escapes = 0;
+
+  function teleport(event) {
+    if (event.type === 'touchstart') event.preventDefault();
+    const maxX = window.innerWidth - btn.offsetWidth;
+    const maxY = window.innerHeight - btn.offsetHeight;
+    btn.style.transform = 'none';
+    btn.style.left = Math.floor(Math.random() * maxX) + 'px';
+    btn.style.top = Math.floor(Math.random() * maxY) + 'px';
+
+    if (event.type !== 'mouseenter' && event.type !== 'touchstart') return;
+    escapes++;
+    if (HINTS[escapes]) aliceSay(HINTS[escapes]);
+  }
+
+  for (const type of ['mouseenter', 'mousemove', 'mousedown', 'touchstart']) {
+    btn.addEventListener(type, teleport, { passive: false });
+  }
+
+  btn.addEventListener('click', async () => {
+    result.className = '';
+    try {
+      const res = await fetch('{{ url_for("level1_flag") }}', { method: 'POST' });
+      if (!res.ok) throw new Error('server responded ' + res.status);
+      const data = await res.json();
+      result.className = 'flag';
+      result.textContent = '🎉 ' + data.flag;
+    } catch (err) {
+      console.error(err);
+      result.className = 'error';
+      result.textContent = 'Failed to get the flag: ' + err.message;
+    }
+  });
+</script>
+{% endblock %}

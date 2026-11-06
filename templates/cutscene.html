@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}{{ title | default('Interlude') }}{% endblock %}
+{% block topbar %}{% endblock %}
+{% block head %}
+<style>
+  
+  .scanlines, .noise { display: none; }
+  .next { display: none; } 
+  body { height: 100vh; overflow: hidden; background: #000; }
+  .gif-stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; }
+  .gif-stage img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated;
+                   transition: opacity 1.5s ease; }
+
+  .vignette {
+    position: fixed; inset: 0; z-index: 5; pointer-events: none;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0) 46%);
+  }
+
+  .speaker {
+    position: fixed; left: 16px; bottom: 16px; z-index: 20;
+    display: flex; align-items: flex-end; gap: 16px; pointer-events: none;
+  }
+  .speaker.ascii { left: 44px; }  
+  
+  .tag {
+    padding: 8px 16px; font-family: var(--font-title); font-size: 1.3rem; letter-spacing: 0.05em;
+    color: var(--bg); background: var(--accent); align-self: flex-end; margin-bottom: 48px;
+  }
+  
+  .portrait {
+    margin: 0; white-space: pre; font-family: monospace;
+    font-size: 10px; line-height: 12px;
+    color: var(--accent); text-shadow: 0 0 6px rgba(57, 255, 136, 0.6);
+  }
+  .portrait .eye { color: var(--danger); text-shadow: 0 0 6px var(--danger); }
+
+  .continue {
+    margin-top: 10px; color: var(--muted); font-size: 0.85rem;
+    animation: blink 1s steps(1) infinite;
+  }
+
+  #fade {
+    position: fixed; inset: 0; z-index: 300; background: #000;
+    opacity: 0; pointer-events: none; transition: opacity 1.5s ease;
+  }
+  #fade.on { opacity: 1; }
+
+  @media (max-width: 700px) {
+    .speaker { gap: 8px; }
+    .tag { font-size: 1rem; padding: 6px 10px; }
+    .portrait { font-size: 8px; line-height: 10px; }
+    .dialog { max-width: 54vw; font-size: 1rem; }
+  }
+</style>
+{% endblock %}
+{% block body %}
+<div class="gif-stage">
+  <img id="gif" src="" alt="an animated pixel-art scene">
+</div>
+<div class="vignette"></div>
+<div id="fade"{% if fade_in %} class="on"{% endif %}></div>
+
+<div class="speaker {{ 'ascii' if portrait == 'ascii' }}">
+  {% if portrait == 'ascii' %}
+  <pre class="portrait" id="slot" aria-hidden="true"></pre>
+  {% else %}
+  <div class="tag" id="slot"></div>
+  {% endif %}
+  <div class="dialog glitch-heavy" role="status" hidden>
+    <p><span id="spk-text"></span><span class="cursor">█</span></p>
+    <div class="continue" id="continue" hidden>click to continue</div>
+  </div>
+</div>
+
+{% if portrait == 'ascii' %}
+<pre id="art-Alice" hidden>
+        /\                /\
+     .####.            .####.
+    .######.          .######.
+    ########:........:########
+   .##########################.
+   ############################
+   #####  \\  ######  //  #####
+   #####  <span class="eye">@@</span>  ######  <span class="eye">@@</span>  #####
+   #####      ######      #####
+   ############.''.############
+ -=~###########/VV\###########~=-
+ ~=-##########################-=~
+     '######################'
+         ################
+        ##################
+       ####################
+      ######################
+</pre>
+<pre id="art-You" hidden>
+          .:~!7??7!~:.
+       :~?5GB######BG5?~:
+     :?GB############BG?:
+    7B################B7
+   !B##################B!
+  .G###################G.
+  7###!   !!      !!   !###7
+  G###   (##)    (##)   ###G
+  7###.                .###7
+  .G###.    ..__..    .###G.
+   7###\   (      )   /###7
+    '5##\   '.__.'   /##5'
+      7B#B\        /B#B7
+       '5B#B\    /B#B5'
+         7B###\/###B7
+          '5B###B5'
+            7B#B7
+             '5'
+</pre>
+{% endif %}
+
+<script>
+  const SCENES = {{ scenes | tojson }};
+  const NEXT_URL = "{{ next_url }}";
+  const STYLE = "{{ portrait | default('tags') }}";
+  const FADE_IN = {{ 'true' if fade_in else 'false' }};
+
+  const gif = document.getElementById('gif');
+  const slot = document.getElementById('slot');
+  const textEl = document.getElementById('spk-text');
+  const dialog = document.querySelector('.speaker .dialog');
+  const cursor = document.querySelector('.dialog .cursor');
+  const continueEl = document.getElementById('continue');
+  const fade = document.getElementById('fade');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TYPE_MS = 80, START_MS = 500, LINE_GAP_MS = 1100, FADE_MS = 1500;
+  let timer = null, waiting = false, current = 0;
+
+  function showSpeaker(who) {
+    if (STYLE === 'ascii') {
+      const art = document.getElementById('art-' + who);
+      slot.innerHTML = art ? art.innerHTML.replace(/^\n/, '').replace(/\n$/, '') : '';
+    } else {
+      slot.textContent = who;
+    }
+  }
+
+  function typeLine(who, text, onDone) {
+    showSpeaker(who);
+    dialog.hidden = false;
+    if (reduce) { textEl.textContent = text; if (onDone) onDone(); return; }
+    const chars = Array.from(text);
+    let i = 0;
+    (function type() {
+      textEl.textContent = chars.slice(0, ++i).join('');
+      if (i < chars.length) timer = setTimeout(type, TYPE_MS);
+      else if (onDone) timer = setTimeout(onDone, LINE_GAP_MS);
+    })();
+  }
+
+  function setGif(src) {
+    gif.style.transition = 'none';
+    gif.style.opacity = '0';
+    gif.src = src;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      gif.style.transition = 'opacity 1.5s ease';
+      gif.style.opacity = '1';
+    }));
+  }
+
+  function playScene(index) {
+    
+    if (index === 0) gif.src = SCENES[index].gif;
+    else setGif(SCENES[index].gif);
+    const lines = SCENES[index].lines;
+    let n = 0;
+    function nextLine() {
+      if (n < lines.length) {
+        const line = lines[n++];
+        typeLine(line.who, line.text, nextLine);
+      } else if (SCENES[index].auto_ms != null) {
+        cursor.hidden = true;
+        if (reduce) advance();
+        else timer = setTimeout(advance, SCENES[index].auto_ms);
+      } else {
+        cursor.hidden = true;
+        continueEl.hidden = false;
+        waiting = true;
+      }
+    }
+    const sd = SCENES[index].start_delay_ms;
+    if (sd && !reduce) timer = setTimeout(nextLine, sd);
+    else nextLine();
+  }
+
+  function advance() {
+    waiting = false;
+    continueEl.hidden = true;
+    cursor.hidden = false;
+    const next = current + 1;
+    if (next < SCENES.length) {
+      current = next;
+      playScene(current);
+    } else if (reduce) {
+      location.href = NEXT_URL;
+    } else {
+      
+      fade.classList.add('on');
+      setTimeout(() => { location.href = NEXT_URL; }, FADE_MS + 50);
+    }
+  }
+
+  document.addEventListener('click', () => {
+    if (!waiting) return;
+    advance();
+  });
+
+  if (FADE_IN) requestAnimationFrame(() => requestAnimationFrame(() => fade.classList.remove('on')));
+
+  
+  gif.src = SCENES[0].gif;
+  showSpeaker(SCENES[0].lines[0].who);
+  const startDelay = FADE_IN ? FADE_MS + 2000 : START_MS;
+  setTimeout(() => playScene(0), startDelay);
+</script>
+{% endblock %}

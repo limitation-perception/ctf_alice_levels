@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_alice.html" import alice %}
+{% block title %}{{ title }}{% endblock %}
+{% block path %}level_{{ n }}{% endblock %}
+{% block head %}
+<style>
+  main { padding-bottom: calc(26vh + 16px); } 
+</style>
+{% endblock %}
+{% block body %}
+
+<main hidden>
+  <p class="level-label">// level {{ n }}</p>
+  <h1>Oops!</h1>
+  <p class="subtitle">Browsers have a good memory though... 🧠</p>
+  <div class="box">
+    somebody removed the flag from the page...nobody saw it, right? 🙈
+  </div>
+</main>
+
+{{ alice() }}
+
+<script>
+  const task = document.querySelector('main');
+
+  function revealTask() { task.hidden = false; }
+  setTimeout(() => aliceSay("How could you bypass my defense...",
+    () => aliceSay("I have no choice but to delete the flag from this page", revealTask)), 500);
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('{{ url_for("level2_service_worker") }}').catch((err) => {
+      console.error('Service worker registration failed:', err);
+    });
+  } else {
+    console.error('Service workers are unavailable (HTTPS or localhost required)');
+  }
+</script>
+{% endblock %}

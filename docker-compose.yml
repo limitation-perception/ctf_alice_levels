@@ -1,0 +1,31 @@
+services:
+  button-levels:
+    build: .
+    ports:
+      - "5000:5000"            # host:container; Colo publishes the internal port itself
+    environment:
+      # --- platform-provided on Colo (LAB_KEY_1..5 are the real per-level keys) ---
+      # On the platform these come from the CTFTask key config; the LAB_KEY_* below are
+      # LOCAL DEMO VALUES only, not real platform secrets. The app prefers LAB_KEY_<n>
+      # and falls back to FLAG_<n>, so either naming works for a local run.
+      LAB_KEY_1: "COLO_FLAG{d0nt_n33d_4_m0us3}"
+      LAB_KEY_2: "COLO_FLAG{c4ch3_n3v3r_f0rg3ts}"
+      LAB_KEY_3: "COLO_FLAG{sh3_r3p34ts_t00_much}"
+      LAB_KEY_4: "COLO_FLAG{th3_m0us3_f1n4lly_c4lm3d_d0wn}"
+      LAB_KEY_5: "COLO_FLAG{n3v3r_tru5t_cl13nt_pr1c3}"
+      LAB_RUN_ID: "local-dev"
+      LOGIN_PASSWORD: "purr_purr_1337"
+      SECRET_KEY: "32db9ebdad764653db9d5d87ec59e160bb9cb51381084cedc887cf836e5c0ee9"
+    restart: unless-stopped
+    # keep the lab cheap and bounded
+    mem_limit: 256m
+    pids_limit: 128
+    cpus: 0.5
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5000/colo-health', timeout=3).read()==b'ok' else 1)"]
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 6

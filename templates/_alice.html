@@ -1,0 +1,11 @@
+
+{% macro alice(angry=false) %}
+<aside class="alice{{ ' angry' if angry }}">
+<pre class="cat" aria-hidden="true"></pre>
+  <div class="dialog glitch-heavy" role="status" hidden>
+    <span class="dialog-name">ALICE</span>
+    <p><span class="dialog-text"></span><span class="cursor">█</span></p>
+  </div>
+</aside>
+<script src="{{ url_for('static', filename='alice.js') }}"></script>
+{% endmacro %}

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% from "_alice.html" import alice %}
+{% block title %}{{ title }}{% endblock %}
+{% block path %}level_{{ n }}{% endblock %}
+{% block head %}
+<style>
+  body { min-height: 100vh; }
+  .say {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .say input {
+    width: min(420px, 80vw);
+    font: inherit;
+    color: var(--fg);
+    caret-color: var(--accent);
+    background: rgba(57, 255, 136, 0.08);
+    border: 1px solid var(--border);
+    outline: none;
+    padding: 8px 12px;
+  }
+  .say input:focus { border-color: var(--accent); }
+  
+  main { padding-bottom: calc(26vh + 16px); }
+</style>
+{% endblock %}
+{% block body %}
+
+<main hidden>
+  <p class="level-label">// level {{ n }}</p>
+  <h1>Alice the parrot</h1>
+  <form class="say" id="say">
+    <input id="msg" name="msg" placeholder="> say something..." autocomplete="off" autofocus>
+    <button type="submit">say</button>
+  </form>
+</main>
+
+{{ alice() }}
+
+<script>
+  window.__SK = {{ secret_key | tojson }};
+  window.__SC = {{ secret_cipher | tojson }};
+</script>
+<script>
+{% raw %}
+
+  
+  const scope = { secret: window.__SC.map((c, i) => String.fromCharCode(c ^ window.__SK[i % window.__SK.length])).join('') };
+  const evalExpr = new Function('expr', 'with (this) { return eval(expr); }');
+
+  function parrot(text) {
+    return text.replace(/\{\{([\s\S]+?)\}\}/g, (_, expr) => {
+      try {
+        return String(evalExpr.call(scope, expr));
+      } catch (e) {
+        
+        return '{{ ' + e.name + ': ' + e.message + ' }}';
+      }
+    });
+  }
+
+  const HINTS = {
+    3: "You can't just ask me for the secret. But I do say whatever's in my {{ }} out loud...",
+    6: "Fine, a hint: I keep it in a little box called `secret`. Not that it helps you, hehe.",
+  };
+
+  const form = document.getElementById('say');
+  const input = document.getElementById('msg');
+  const task = document.querySelector('main');
+  let said = 0;
+  let solved = false;
+  let hintTimer = null;
+  const shown = new Set();
+
+  
+  function revealTask() { task.hidden = false; input.focus(); }
+  const L1 = "I'm tired of this weak systems, I am going to be the task MYSELF!!";
+  const L2 = "I am going to repeat everything you say. MAKE ME give you the flag!";
+  setTimeout(() => aliceSay(L1, () => aliceSay(L2, () => {
+    aliceGoAngry();
+    setTimeout(revealTask, 1000);
+  })), 500);
+
+  function maybeHint() {
+    if (solved) return;
+    const due = Object.keys(HINTS).map(Number).filter(t => t <= said && !shown.has(t));
+    if (!due.length) return;
+    const t = Math.max(...due);
+    shown.add(t);
+    aliceSay(HINTS[t]);
+  }
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const text = input.value;
+    if (!text) return;
+    clearTimeout(hintTimer); 
+    const out = parrot(text);
+    aliceSay(out);
+    input.value = '';
+    if (out.includes(scope.secret)) solved = true; 
+    said++;
+    if (!solved) hintTimer = setTimeout(maybeHint, 2500);
+  });
+{% endraw %}
+</script>
+{% endblock %}

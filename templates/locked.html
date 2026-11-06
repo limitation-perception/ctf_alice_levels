@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Access denied{% endblock %}
+{% block path %}level_{{ n }}{% endblock %}
+{% block body %}
+<main>
+  <h1 class="danger">ACCESS DENIED</h1>
+  <p class="subtitle">Level {{ n }} is locked. Enter the flag from level {{ n - 1 }} to unlock it</p>
+  <form class="box" method="post" action="{{ url_for('unlock', n=n) }}">
+    <label class="prompt">&gt; <input name="flag" placeholder="COLO_FLAG{...}" autocomplete="off" required autofocus></label>
+    <button type="submit">unlock</button>
+  </form>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <p><a href="{{ url_for('level', n=n - 1) }}">[ ← back to level {{ n - 1 }} ]</a></p>
+</main>
+{% endblock %}

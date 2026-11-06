@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}Press Start{% endblock %}
+{% block topbar %}{% endblock %}
+{% block head %}
+<style>
+  body { height: 100vh; overflow: hidden; }
+
+  .scene {
+    --art: url('{{ url_for("static", filename="intro.jpg") }}');
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: min(100vw, 100vh * 736 / 597);
+    aspect-ratio: 736 / 597;
+    background: var(--art) center / 100% 100% no-repeat;
+    image-rendering: pixelated;
+    transform-origin: 69% 41%;
+    transform: translate(-50%, -50%);
+    animation: flicker 0.12s infinite alternate;
+  }
+  @keyframes flicker { to { filter: brightness(0.93); } }
+
+  .scene.zoom {
+    transform: translate(-50%, -50%) translate(-19%, 9%) scale(7);
+    transition: transform 1.8s cubic-bezier(0.55, 0, 1, 1);
+  }
+
+  .scene::before, .scene::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    opacity: 0;
+  }
+  .scene::before { animation: glitch-a 4.3s steps(1) infinite; }
+  .scene::after { animation: glitch-b 5.7s steps(1) infinite; }
+  @keyframes glitch-a {
+    0% { opacity: 0; }
+    93% { opacity: 1; clip-path: inset(18% 0 70% 0); transform: translateX(-3%); }
+    94% { opacity: 1; clip-path: inset(52% 0 35% 0); transform: translateX(4%); }
+    95% { opacity: 0; }
+  }
+  @keyframes glitch-b {
+    0% { opacity: 0; }
+    96% { opacity: 1; clip-path: inset(70% 0 12% 0); transform: translateX(2%); filter: hue-rotate(90deg); }
+    97% { opacity: 0; }
+  }
+
+  .room-dark {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: rgba(0, 0, 0, 0.82);
+    pointer-events: none;
+  }
+  
+  .screen-glow {
+    position: absolute;
+    left: 68%;
+    top: 38%;
+    width: 80%;
+    height: 106%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center,
+      rgba(190, 150, 255, 0.62) 0%, rgba(150, 100, 240, 0.3) 40%, transparent 72%);
+    mix-blend-mode: screen;
+    animation: glow-flicker 0.13s infinite alternate;
+  }
+  @keyframes glow-flicker { to { opacity: 0.78; } }
+
+  #static {
+    position: absolute;
+    inset: 0;                   
+    z-index: 4;
+    background: url('{{ url_for("static", filename="monitor-noise.gif") }}') center / cover;
+    image-rendering: pixelated;
+    -webkit-mask: url('{{ url_for("static", filename="monitor-mask.png") }}') center / 100% 100% no-repeat;
+            mask: url('{{ url_for("static", filename="monitor-mask.png") }}') center / 100% 100% no-repeat;
+  }
+
+  .screen-ui {
+    position: absolute;
+    left: 48%;
+    top: 23.3%;
+    width: 41.4%;
+    height: 36.5%;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #start {
+    padding: 12px 28px;
+    font-family: var(--font-title);
+    font-size: 1.8rem;
+    letter-spacing: 0.05em;
+    background: rgba(5, 8, 6, 0.8);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  #start:hover, #start:focus-visible {
+    color: var(--accent);
+    background: rgba(5, 8, 6, 0.8);
+    filter: brightness(0.6);
+  }
+  #start:disabled { visibility: hidden; }
+
+  #loading {
+    position: fixed;
+    inset: 0;
+    z-index: 250;
+    background: #000 url('{{ url_for("static", filename="loading.gif") }}') center / cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #load-blur {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    -webkit-mask: radial-gradient(circle at 50% 50%, #000 0%, #000 22%, transparent 50%);
+            mask: radial-gradient(circle at 50% 50%, #000 0%, #000 22%, transparent 50%);
+  }
+  
+  #spinner {
+    position: absolute;
+    left: 50%;
+    top: 66%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    width: min(80vw, 480px);
+    height: auto;
+    mix-blend-mode: screen;
+    image-rendering: pixelated;
+  }
+  #load-msg {
+    position: absolute;
+    left: 50%;
+    top: 40%;
+    transform: translateX(-50%);
+    z-index: 3;
+    width: min(92%, 960px);
+    text-align: center;
+    font-family: var(--font-title);
+    font-size: clamp(1.5rem, 3.6vw, 3rem);
+    letter-spacing: 0.04em;
+    color: #fff;
+    text-shadow: 0 0 14px rgba(0, 0, 0, 0.85);
+    pointer-events: none;
+  }
+
+  #flash {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    background: radial-gradient(circle, #ecdcff 0%, #9b6bf0 45%, var(--bg) 100%);
+    opacity: 0;
+  }
+  #flash.on { opacity: 1; transition: opacity 0.6s ease-in 1.3s; }
+
+  #fade {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.5s ease;
+  }
+  #fade.on { opacity: 1; }
+</style>
+{% endblock %}
+{% block body %}
+<div class="scene" id="scene" role="img" aria-label="An old computer whose monitor shows only static">
+  <div class="room-dark"></div>
+  <div class="screen-glow"></div>
+  <div id="static" aria-hidden="true"></div>
+  <div class="screen-ui">
+    <button id="start" class="glitch-heavy" type="button" autofocus>PRESS START</button>
+  </div>
+</div>
+<div id="loading" hidden>
+  <div id="load-blur"></div>
+  <img id="spinner" src="{{ url_for('static', filename='loadbar.gif') }}" alt="Loading" aria-hidden="true">
+  <div id="load-msg">use google chrome and press f11 for MUCH better experience</div>
+</div>
+<div id="flash"></div>
+<div id="fade"></div>
+
+<script>
+  const START_URL = '{{ start_url }}';
+  const scene = document.getElementById('scene');
+  const startBtn = document.getElementById('start');
+  const loading = document.getElementById('loading');
+  const flash = document.getElementById('flash');
+  const fade = document.getElementById('fade');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const LOADING_MS = 3000;   
+  const FADE_MS = 1500;      
+
+  startBtn.addEventListener('click', () => {
+    if (reducedMotion) {
+      location.href = START_URL;
+      return;
+    }
+    startBtn.disabled = true;
+    
+    scene.classList.add('zoom');
+    flash.classList.add('on');
+    
+    flash.addEventListener('transitionend', () => {
+      loading.hidden = false;
+      setTimeout(() => {
+        fade.classList.add('on');
+        setTimeout(() => { location.href = START_URL; }, FADE_MS + 50);
+      }, LOADING_MS);
+    }, { once: true });
+  });
+</script>
+{% endblock %}

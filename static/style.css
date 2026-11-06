@@ -1,0 +1,230 @@
+@font-face {
+  font-family: 'Digital Thin';
+  src: url('fonts/Digital_Thin.ttf') format('truetype');
+}
+@font-face {
+  font-family: '7:12 Serif';
+  src: url('fonts/712_Serif.ttf') format('truetype');
+}
+
+:root {
+  --bg: #050806;
+  --panel: #0b100d;
+  --border: #1f2b24;
+  --fg: #c9d1cc;
+  --muted: #6b756f;
+  --accent: #39ff88;
+  --danger: #ff3355;
+  --warn: #ffcc00;
+  --cyan: #22d3ee;
+  --blue: #2f5bff;
+  --font-title: 'Digital Thin', monospace;
+  --font-text: '7:12 Serif', monospace;
+}
+
+* { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-text);
+  font-size: 24px;
+  -webkit-font-smoothing: none;
+  background: var(--bg);
+  color: var(--fg);
+  text-align: center;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.term {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  text-align: left;
+}
+.term .user { color: var(--accent); }
+.cursor { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+main { padding: 48px 16px; }
+h1 {
+  margin: 0 0 12px;
+  font-family: var(--font-title);
+  font-weight: normal;
+  font-size: 4rem;
+  letter-spacing: 0.05em;
+  animation: glitch-text 3s infinite;
+}
+h1.danger { color: var(--danger); }
+h1.granted { color: var(--accent); }
+@keyframes glitch-text {
+  0%, 88%, 100% { text-shadow: -2px 0 var(--danger), 2px 0 var(--cyan); transform: none; }
+  90% { text-shadow: -6px 0 var(--danger), 6px 0 var(--cyan); transform: translateX(3px) skewX(-8deg); }
+  92% { text-shadow: 5px 0 var(--danger), -5px 0 var(--cyan); transform: translateX(-4px); }
+  94% { text-shadow: -2px 0 var(--danger), 2px 0 var(--cyan); transform: none; }
+}
+.level-label { margin: 0 0 4px; color: var(--muted); }
+.subtitle { margin: 0 0 32px; color: var(--muted); }
+.flag { color: var(--accent); }
+.error { color: var(--danger); }
+
+.box {
+  position: relative;
+  display: inline-block;
+  padding: 24px 36px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.box::before, .box::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--accent);
+}
+.box::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+.box::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+button {
+  font: inherit;
+  padding: 8px 20px;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent);
+  cursor: pointer;
+}
+button:hover, button:focus-visible { color: var(--bg); background: var(--accent); outline: none; }
+.prompt { color: var(--accent); }
+.prompt input {
+  width: min(320px, 60vw);
+  font: inherit;
+  color: var(--fg);
+  caret-color: var(--accent);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  outline: none;
+}
+.prompt input:focus { border-bottom-color: var(--accent); }
+
+.next {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+}
+
+.glitch-heavy { --glitch-strength: 1; animation: glitch-heavy 0.4s steps(1) infinite; }
+@keyframes glitch-heavy {
+  0%   { text-shadow: calc(-3px * var(--glitch-strength)) 0 var(--danger), calc(3px * var(--glitch-strength)) 0 var(--blue), 0 0 calc(6px * var(--glitch-strength)) var(--blue);
+         box-shadow: calc(-2px * var(--glitch-strength)) 0 var(--danger), calc(2px * var(--glitch-strength)) 0 var(--blue);
+         transform: none; clip-path: none; }
+  10%  { text-shadow: calc(6px * var(--glitch-strength)) 0 var(--danger), calc(-6px * var(--glitch-strength)) 0 var(--blue), 0 0 calc(8px * var(--glitch-strength)) var(--danger);
+         box-shadow: calc(4px * var(--glitch-strength)) 0 var(--danger), calc(-4px * var(--glitch-strength)) 0 var(--blue);
+         transform: translateX(calc(4px * var(--glitch-strength))) skewX(calc(-6deg * var(--glitch-strength))); clip-path: inset(0 0 40% 0); }
+  20%  { text-shadow: calc(-4px * var(--glitch-strength)) calc(1px * var(--glitch-strength)) var(--danger), calc(4px * var(--glitch-strength)) calc(-1px * var(--glitch-strength)) var(--blue);
+         box-shadow: calc(-3px * var(--glitch-strength)) 0 var(--danger), calc(3px * var(--glitch-strength)) 0 var(--blue);
+         transform: translateX(calc(-3px * var(--glitch-strength))); clip-path: none; }
+  30%  { text-shadow: calc(7px * var(--glitch-strength)) 0 var(--danger), calc(-4px * var(--glitch-strength)) 0 var(--blue), 0 0 calc(10px * var(--glitch-strength)) var(--blue);
+         box-shadow: calc(5px * var(--glitch-strength)) 0 var(--danger), calc(-3px * var(--glitch-strength)) 0 var(--blue);
+         transform: translateX(calc(-5px * var(--glitch-strength))) skewX(calc(4deg * var(--glitch-strength))); clip-path: none; }
+  40%  { text-shadow: calc(-3px * var(--glitch-strength)) 0 var(--danger), calc(5px * var(--glitch-strength)) 0 var(--blue);
+         box-shadow: calc(-3px * var(--glitch-strength)) 0 var(--danger), calc(4px * var(--glitch-strength)) 0 var(--blue);
+         transform: translateX(calc(2px * var(--glitch-strength))); clip-path: none; }
+  50%  { text-shadow: calc(3px * var(--glitch-strength)) calc(-1px * var(--glitch-strength)) var(--danger), calc(-7px * var(--glitch-strength)) calc(1px * var(--glitch-strength)) var(--blue), 0 0 calc(7px * var(--glitch-strength)) var(--danger);
+         box-shadow: calc(2px * var(--glitch-strength)) 0 var(--danger), calc(-5px * var(--glitch-strength)) 0 var(--blue);
+         transform: translateX(calc(5px * var(--glitch-strength))) skewX(calc(-3deg * var(--glitch-strength))); clip-path: inset(50% 0 0 0); }
+  60%  { text-shadow: calc(-5px * var(--glitch-strength)) 0 var(--danger), calc(2px * var(--glitch-strength)) 0 var(--blue);
+         box-shadow: calc(-4px * var(--glitch-strength)) 0 var(--danger), calc(2px * var(--glitch-strength)) 0 var(--blue);
+         transform: translateX(calc(-2px * var(--glitch-strength))); clip-path: none; }
+  70%  { text-shadow: calc(4px * var(--glitch-strength)) 0 var(--danger), calc(-4px * var(--glitch-strength)) 0 var(--blue), 0 0 calc(9px * var(--glitch-strength)) var(--blue);
+         box-shadow: calc(4px * var(--glitch-strength)) 0 var(--danger), calc(-4px * var(--glitch-strength)) 0 var(--blue);
+         transform: translateX(calc(-4px * var(--glitch-strength))) skewX(calc(5deg * var(--glitch-strength))); clip-path: none; }
+  80%  { text-shadow: calc(-2px * var(--glitch-strength)) 0 var(--danger), calc(6px * var(--glitch-strength)) 0 var(--blue);
+         box-shadow: calc(-2px * var(--glitch-strength)) 0 var(--danger), calc(5px * var(--glitch-strength)) 0 var(--blue);
+         transform: translateX(calc(3px * var(--glitch-strength))); clip-path: none; }
+  90%  { text-shadow: calc(5px * var(--glitch-strength)) calc(1px * var(--glitch-strength)) var(--danger), calc(-3px * var(--glitch-strength)) calc(-1px * var(--glitch-strength)) var(--blue), 0 0 calc(6px * var(--glitch-strength)) var(--danger);
+         box-shadow: calc(4px * var(--glitch-strength)) 0 var(--danger), calc(-2px * var(--glitch-strength)) 0 var(--blue);
+         transform: translateX(calc(-2px * var(--glitch-strength))) skewX(calc(-4deg * var(--glitch-strength))); clip-path: none; }
+}
+
+.alice {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  text-align: left;
+  pointer-events: none;
+}
+.cat {
+  margin: 0;
+  font-family: monospace;
+  font-size: clamp(7px, 1.4vh, 14px);
+  line-height: 1.1;
+  color: var(--accent);
+  text-shadow: 0 0 6px rgba(57, 255, 136, 0.6);
+}
+
+.alice.angry .eye { color: var(--danger); text-shadow: 0 0 6px var(--danger); }
+
+.alice.shy .cheek { color: #ff6fae; text-shadow: 0 0 6px #ff6fae; }
+.dialog {
+  --glitch-strength: 0.5;
+  position: relative;
+  max-width: min(440px, 50vw);
+  margin-bottom: 48px;
+  padding: 20px 20px 16px;
+  font-size: 1.2rem;
+  color: var(--accent);
+  background: var(--panel);
+  border: 2px solid var(--accent);
+}
+.dialog-name {
+  position: absolute;
+  top: -14px;
+  left: 12px;
+  padding: 0 8px;
+  font-size: 0.8em;
+  color: var(--bg);
+  background: var(--accent);
+}
+
+.dialog::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  bottom: 16px;
+  border: 7px solid transparent;
+  border-right-color: var(--accent);
+}
+.dialog p { margin: 0; }
+
+.scanlines, .noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+.scanlines {
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 2px, transparent 2px 4px);
+}
+.noise {
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: noise-shift 0.4s steps(4) infinite;
+  transition: opacity 0.6s;
+}
+@keyframes noise-shift {
+  0% { background-position: 0 0; }
+  25% { background-position: -53px 31px; }
+  50% { background-position: 71px -17px; }
+  75% { background-position: -29px -67px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

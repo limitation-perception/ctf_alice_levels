@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% from "_alice.html" import alice %}
+{% block title %}{{ title }}{% endblock %}
+{% block path %}level_{{ n }}{% endblock %}
+{% block head %}
+<style>
+  body { min-height: 100vh; }
+  main { padding-bottom: calc(26vh + 16px); } 
+
+  .balance {
+    position: fixed;
+    top: 44px;
+    right: 16px;
+    z-index: 40;
+    padding: 8px 14px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    background: var(--panel);
+  }
+  .balance b { font-variant-numeric: tabular-nums; }
+
+  .shop {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    margin: 24px auto 0;
+    max-width: 720px;
+  }
+  .product {
+    width: 150px;
+    padding: 18px 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+  .pname { font-size: 1.3rem; color: var(--fg); }
+  .pprice { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .buy { width: 100%; }
+
+  .bal-note { color: var(--danger); margin-top: 4px; text-align: right; min-height: 1.1em;
+              font-variant-numeric: tabular-nums; }
+
+  .captcha {
+    max-width: 480px;
+    margin: 24px auto 0;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    text-align: left;
+  }
+  .captcha-q { margin: 0 0 12px; color: var(--warn); }
+  .captcha input {
+    width: 100%; font: inherit; color: var(--fg); padding: 6px 10px;
+    background: rgba(57,255,136,0.06); border: 1px solid var(--border); outline: none;
+  }
+  .captcha button { margin-top: 10px; }
+  #captcha-out { min-height: 1.3em; margin: 10px 0 0; word-break: break-all; }
+  #captcha-out.flag { color: var(--accent); }
+  #captcha-out.error { color: var(--danger); }
+
+  #fade { position: fixed; inset: 0; z-index: 300; background: #000; opacity: 0;
+          pointer-events: none; transition: opacity 1.5s ease; }
+  #fade.on { opacity: 1; }
+</style>
+{% endblock %}
+{% block body %}
+
+<div id="fade" class="on"></div>
+<div class="balance">
+  <div>Balance: <b id="bal">{{ balance }}</b> ₴</div>
+  <div class="bal-note" id="bal-note"></div>
+</div>
+<main>
+  <p class="level-label">// level {{ n }}</p>
+  <h1>Corner Shop</h1>
+  <p class="subtitle">Alice demands a beer. You have {{ balance }} ₴. Make it work 🍺</p>
+
+  <div class="shop">
+    {% for it in items %}
+    <div class="product">
+      <div class="pname">{{ it.name }}</div>
+      <div class="pprice">{{ it.price }} ₴</div>
+      <button class="buy" type="button" data-item="{{ it.id }}" data-price="{{ it.price }}">Buy</button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="captcha" id="captcha" hidden>
+    <p class="captcha-q" id="captcha-q"></p>
+    <input id="captcha-input" placeholder="your answer" autocomplete="off">
+    <button id="captcha-verify" type="button">verify</button>
+    <p id="captcha-out"></p>
+  </div>
+</main>
+
+{{ alice(angry=true) }}
+
+<script>
+  const BUY_URL = "{{ url_for('level5_buy') }}";
+  const balEl = document.getElementById('bal');
+  const balNote = document.getElementById('bal-note');
+  let balance = parseInt(balEl.textContent, 10); 
+
+  requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById('fade').classList.remove('on')));
+
+  
+  let aliceBusy = false;
+  function aliceSayOnce(text) {
+    if (aliceBusy) return;
+    aliceBusy = true;
+    aliceSay(text, () => { aliceBusy = false; });
+  }
+
+  for (const btn of document.querySelectorAll('.buy')) {
+    btn.addEventListener('click', async () => {
+      const item = btn.dataset.item;
+      const price = parseFloat(btn.dataset.price); 
+      
+      if (price > balance) {
+        balNote.textContent = 'Not enough money on your balance!';
+        return;
+      }
+      const body = new URLSearchParams({ item, price: btn.dataset.price });
+      try {
+        const res = await fetch(BUY_URL, { method: 'POST', body });
+        const data = await res.json();
+        if (data.captcha) {       
+          showCaptcha(data.captcha);
+          return;
+        }
+        
+        balance -= price;
+        balEl.textContent = balance;
+        balNote.textContent = '−' + price + ' ₴';
+        aliceSayOnce("That's not a beer. Try harder.");
+      } catch (err) {
+        balNote.textContent = 'Request failed: ' + err.message; 
+      }
+    });
+  }
+
+  const captcha = document.getElementById('captcha');
+  function showCaptcha(data) {
+    document.getElementById('captcha-q').textContent = data.question;
+    captcha.dataset.answer = data.answer;
+    captcha.dataset.flag = data.flag_b64;
+    captcha.hidden = false;
+    aliceSay("Hah. Prove you're human first — solve THIS. (impossible, by the way)");
+  }
+  document.getElementById('captcha-verify').addEventListener('click', () => {
+    const out = document.getElementById('captcha-out');
+    if (document.getElementById('captcha-input').value === captcha.dataset.answer) {
+      out.className = 'flag';
+      out.textContent = '🏆 ' + atob(captcha.dataset.flag);
+      aliceSay("...how. HOW did you solve that.");
+    } else {
+      out.className = 'error';
+      out.textContent = '✗ captcha failed';
+    }
+  });
+
+  setTimeout(() => aliceSayOnce("I want BEER. Get me one — NOW."), 2500);
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% from "_alice.html" import alice %}
+{% block title %}System Login{% endblock %}
+{% block path %}login{% endblock %}
+{% block head %}
+<style>
+  
+  main { padding: 24px 16px calc(26vh + 16px); }
+
+  .login {
+    width: min(640px, 100%);
+    margin: 0 auto;
+    padding: 24px 32px;
+    font-size: 0.85em;
+    text-align: left;
+    background: var(--panel);
+    border: 2px dashed var(--accent);
+    box-shadow: 0 0 24px rgba(57, 255, 136, 0.35), inset 0 0 24px rgba(57, 255, 136, 0.08);
+  }
+  .login h1 { margin: 0; font-size: 3rem; color: var(--accent); }
+  .login hr { margin: 12px 0 16px; border: none; border-top: 2px dashed rgba(57, 255, 136, 0.5); }
+  .login p { margin: 0 0 8px; }
+  .cmd { color: var(--accent); }
+  .ok { color: var(--muted); }
+  .field {
+    display: block;
+    width: min(420px, 100%);
+    margin: 0 0 14px;
+    padding: 6px 12px;
+    font: inherit;
+    color: var(--fg);
+    caret-color: var(--accent);
+    background: rgba(57, 255, 136, 0.08);
+    border: 2px dashed var(--accent);
+    outline: none;
+  }
+  .field:focus { box-shadow: 0 0 12px rgba(57, 255, 136, 0.5); }
+  .field::placeholder { color: var(--muted); }
+  .yn { margin-bottom: 14px; color: var(--muted); }
+  .login .error { margin: -6px 0 14px; }
+  .submit { display: block; margin: 0 auto; color: var(--bg); background: var(--accent); }
+  .submit:hover, .submit:focus-visible { filter: brightness(0.75); }
+
+  @media (max-width: 700px) {
+    main { padding-bottom: 16px; }
+    .login { padding: 24px 16px; }
+    
+    .alice { position: static; gap: 8px; padding: 0 16px 16px; }
+    .dialog { max-width: none; margin-bottom: 24px; font-size: 1rem; }
+  }
+</style>
+{% endblock %}
+{% block body %}
+<main>
+  <form class="login" method="post" action="{{ url_for('login_submit') }}">
+    <h1>SYSTEM LOGIN</h1>
+    <hr>
+    <p class="cmd">guest@ctf:~$ booting up...</p>
+    <p class="ok">[ OK ] initializing login session...</p>
+    <p class="cmd">guest@ctf:~$ whoami</p>
+    <input class="field" name="name" value="{{ name }}" placeholder="&gt; enter your name" autocomplete="off" required autofocus>
+    <p class="cmd">guest@ctf:~$ passwd --verify</p>
+    <!-- alice: note to self, my password is {{ password }} . don't tell the humans -->
+    <input class="field" type="password" name="password" placeholder="&gt; enter password" required>
+    {% if error %}<p class="error">[ FAIL ] access denied: wrong password</p>{% endif %}
+    <p class="cmd">guest@ctf:~$ login</p>
+    <p class="yn">[ y / n ]</p>
+    <button class="submit" type="submit">Submit</button>
+  </form>
+</main>
+
+{{ alice(angry=true) }}
+
+<script>
+  const START_DELAY_MS = 500;
+  setTimeout(() => aliceSay({{ ("Nope. Wrong password, human. Try harder!!" if error
+                                else "WHAT are you doing!?!?! I won't let you login that easy!") | tojson }}),
+             START_DELAY_MS);
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block topbar %}
+  <header class="term"><span class="user">root@ctf</span>:~/{% block path %}{% endblock %}$ <span class="cursor">█</span></header>
+  {% endblock %}
+  {% block body %}{% endblock %}
+  {% block nextlink %}
+  {% if next_level %}
+  <a class="next" href="{{ url_for("level", n=next_level) }}">[ next level → ]</a>
+  {% endif %}
+  {% endblock %}
+  <div class="noise"></div>
+  <div class="scanlines"></div>
+</body>
+</html>

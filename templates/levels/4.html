@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% from "_alice.html" import alice %}
+{% block title %}{{ title }}{% endblock %}
+{% block nextlink %}<a class="next" href="{{ url_for('level5_intro') }}">[ next level → ]</a>{% endblock %}
+{% block path %}level_{{ n }}{% endblock %}
+{% block head %}
+<style>
+  body { min-height: 100vh; }
+  main { padding-bottom: calc(26vh + 16px); } 
+
+  .stage { position: relative; min-height: 56vh; }
+
+  .mouse {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: min(200px, 44vw);
+    filter: drop-shadow(0 0 8px rgba(57, 255, 136, 0.35));
+    animation: hop 3.2s ease-in-out infinite;
+  }
+  @keyframes hop {
+    0%   { transform: translate(-50%, 0) scaleY(1) rotate(0deg); }
+    12%  { transform: translate(-180%, 8vh) scaleY(0.88) rotate(-8deg); }
+    25%  { transform: translate(-220%, 24vh) scaleY(1) rotate(0deg); }
+    40%  { transform: translate(20%, 30vh) scaleY(0.9) rotate(6deg); }
+    55%  { transform: translate(120%, 10vh) scaleY(1) rotate(10deg); }
+    70%  { transform: translate(90%, 28vh) scaleY(0.88) rotate(-4deg); }
+    85%  { transform: translate(-80%, 16vh) scaleY(1) rotate(-6deg); }
+    100% { transform: translate(-50%, 0) scaleY(1) rotate(0deg); }
+  }
+  .mouse.calm { animation: none; transform: translate(-50%, 12vh); }
+
+  #give {
+    position: absolute;
+    left: calc(50% + min(200px, 44vw) / 2 + 24px);
+    top: calc(12vh + 36px);
+    transform: none;
+  }
+
+  .notes {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    max-width: 760px;
+    margin: 8px auto 0;
+  }
+  .note { display: flex; justify-content: center; }
+  
+  .note-paper {
+    position: relative;
+    width: 92px; height: 108px;
+    cursor: pointer;
+    border: 1px solid var(--accent);
+    background:
+      repeating-linear-gradient(var(--panel) 0 13px, rgba(57,255,136,0.18) 13px 14px) 0 20px / 100% 100% no-repeat,
+      var(--panel);
+    box-shadow: inset 0 0 10px rgba(57,255,136,0.08);
+  }
+  .note-paper:hover { filter: brightness(1.3); }
+  .note-paper::before { 
+    content: ''; position: absolute; top: 0; right: 0;
+    border: 13px solid transparent; border-top-color: var(--bg); border-right-color: var(--bg);
+  }
+  .note-paper .lock {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+  }
+  .note-body {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 8px; border: 1px solid var(--border); background: var(--panel);
+    font-size: 0.7rem; word-break: break-all;
+  }
+  .note-cipher { color: var(--muted); font-family: monospace; }
+
+  @media (max-width: 700px) { .notes { grid-template-columns: repeat(2, 1fr); } }
+
+  #fade { position: fixed; inset: 0; z-index: 300; background: #000; opacity: 0;
+          pointer-events: none; transition: opacity 0.5s ease; }
+  #fade.on { opacity: 1; }
+</style>
+{% endblock %}
+{% block body %}
+
+<main>
+  <p class="level-label">// level {{ n }}</p>
+  <h1>Twitchy</h1>
+  <div class="stage">
+    <img class="mouse" id="mouse" src="{{ url_for('static', filename='mouse.png') }}" alt="a twitchy mouse">
+    <button id="give" type="button" hidden>give the flag</button>
+  </div>
+
+  <div class="notes" id="notes" hidden>
+    {% for note in notes %}
+    <div class="note" data-secret="{{ note.secret }}">
+      <button class="note-paper" type="button" aria-label="a note"><span class="lock">🔒</span></button>
+      <div class="note-body" hidden>
+        <div class="note-cipher">{{ note.secret }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+
+{{ alice(angry=true) }}
+<div id="fade"></div>
+
+<script>
+  const mouse = document.getElementById('mouse');
+  const give = document.getElementById('give');
+  const notesEl = document.getElementById('notes');
+  const fade = document.getElementById('fade');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let calmed = false;
+
+  function moodIsCalm() {
+    try { return localStorage.getItem('mouse-mood') === 'calm'; }
+    catch (e) { return false; }
+  }
+  function isCalm() { return reduced.matches || moodIsCalm(); }
+
+  function onCalm() {
+    if (calmed || !isCalm()) return;
+    calmed = true;
+    mouse.classList.add('calm'); 
+    setTimeout(() => {
+      aliceSay("How did you....  you're better than I expected...",
+        () => aliceSay("Okay, you want the flag? take it!!", () => { give.hidden = false; }));
+    }, 1500);
+  }
+  reduced.addEventListener('change', onCalm);
+  window.addEventListener('storage', onCalm);
+
+  aliceSay("This mouse is going crazy... make it STOP!!!!");
+
+  
+  if (moodIsCalm()) onCalm(); 
+  const LATE_HINT_MS = 20 * 60 * 1000;
+  setTimeout(() => { if (!calmed) aliceSay("Or check what MOOD this mouse is in. Moods are easy to change, you know."); }, LATE_HINT_MS);
+
+  let giveState = 'first';
+  give.addEventListener('click', () => {
+    if (giveState === 'first') {
+      giveState = 'disabling';
+      setTimeout(() => { 
+        aliceShy();
+        aliceSay("you looking for something? ~~", () => {
+          aliceUnshy();
+          aliceSay("I disabled the button, do something about that...", () => {
+            give.disabled = true;
+            giveState = 'reenable';
+          });
+        });
+      }, 1000);
+    } else if (giveState === 'reenable') {
+      giveState = 'done';
+      aliceSay("To be honest, I am impressed. Here's your last challenge.", showNotes);
+    }
+  });
+
+  function showNotes() {
+    fade.classList.add('on');
+    setTimeout(() => {
+      document.querySelector('.stage').hidden = true;
+      notesEl.hidden = false;
+      fade.classList.remove('on');
+      aliceSay("The flag is somewhere behind one of the 50 locks we have here...");
+    }, 1000);
+  }
+
+  let notesHinted = false;
+  for (const note of document.querySelectorAll('.note')) {
+    const paper = note.querySelector('.note-paper');
+    const body = note.querySelector('.note-body');
+    paper.addEventListener('click', () => {
+      paper.hidden = true;
+      body.hidden = false;
+      if (!notesHinted) {
+        notesHinted = true;
+        setTimeout(() => aliceSay("I hid the flag in one of these boxes. They're all scrambled the same way... good luck."), 1000);
+      }
+    });
+  }
+</script>
+{% endblock %}
